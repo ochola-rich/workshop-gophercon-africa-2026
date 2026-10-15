@@ -11,38 +11,34 @@ import (
 )
 
 templ SightingCard(s sighting.Sighting) {
-	<article class="card">
-		<!-- Header -->
-		<header class="card__header">
-			<h2>{ displayName(s.Species) }</h2>
+	<article class="card" id={ "s-" + s.ID.String() }>
+		<div class="card__photo">
+			if m, ok := photo(s.Media); ok {
+				<img src={ m.URL } alt={ altText(m) } loading="lazy" decoding="async" width="400" height="300"/>
+			} else {
+				<span class="card__nophoto">No photo</span>
+			}
+		</div>
+		<div class="card__body">
+			<h3 class="card__name">{ displayName(s.Species) }</h3>
 			if s.Species.ScientificName != "" {
 				<p class="card__scientific">{ s.Species.ScientificName }</p>
 			}
-		</header>
-		<!-- Meta -->
-		<dl class="card__meta">
-			<dt>Seen</dt>
-			<dd>{ s.HappenedAt.Format("2 January 2006") }</dd>
-			<dt>Where</dt>
-			<dd>{ place(s.Location) }</dd>
-			if s.IndividualCount != nil {
-				<dt>Count</dt>
-				<dd>{ individuals(*s.IndividualCount) }</dd>
-			}
-			if s.RecordedBy != "" {
-				<dt>Recorded by</dt>
-				<dd>{ s.RecordedBy }</dd>
-			}
-		</dl>
-		<!-- Gallery -->
-		<div class="card__gallery">
-			@Gallery(s.Media)
+			<dl class="card__meta">
+				<div><dt>Seen</dt><dd>{ s.HappenedAt.Format("2 Jan 2006") }</dd></div>
+				<div><dt>Where</dt><dd>{ place(s.Location) }</dd></div>
+				if s.IndividualCount != nil {
+					<div><dt>Count</dt><dd>{ individuals(*s.IndividualCount) }</dd></div>
+				}
+				if s.RecordedBy != "" {
+					<div><dt>Recorded by</dt><dd>{ s.RecordedBy }</dd></div>
+				}
+			</dl>
 		</div>
 	</article>
 }
 
-// displayName prefers the name a reader would recognise, falling back
-// through the taxonomy as GBIF records thin out.
+// displayName prefers the name a reader would recognise.
 func displayName(sp species.Species) string {
 	return cmp.Or(sp.VernacularName, sp.CanonicalName, sp.ScientificName, "Unknown species")
 }
@@ -62,4 +58,14 @@ func individuals(n int) string {
 		return "1 individual"
 	}
 	return fmt.Sprintf("%d individuals", n)
+}
+
+// photo returns the sighting's first still image.
+func photo(media []sighting.Media) (sighting.Media, bool) {
+	for _, m := range media {
+		if m.Type == "StillImage" && m.URL != "" {
+			return m, true
+		}
+	}
+	return sighting.Media{}, false
 }

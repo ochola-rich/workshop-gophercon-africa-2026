@@ -1,7 +1,9 @@
 package layout
 
 type BaseProps struct {
-	Title string
+	Title       string
+	Description string
+	Three       bool
 }
 
 templ Base(props BaseProps) {
@@ -10,14 +12,50 @@ templ Base(props BaseProps) {
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml"/>
+			<link rel="manifest" href="/assets/manifest.json"/>
+			<meta name="theme-color" content="#0A0A0A"/>
 			<title>{ props.Title }</title>
+			if props.Description != "" {
+				<meta name="description" content={ props.Description }/>
+			}
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap"/>
+			if props.Three {
+				<script type="importmap">
+					{
+						"imports": {
+							"three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+							"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+							"topojson-client": "https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/+esm",
+							"d3-geo": "https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/+esm"
+						}
+					}
+				</script>
+				<link rel="stylesheet" href="/assets/css/threejs.css"/>
+			}
 			<link rel="stylesheet" href="/assets/css/app.css"/>
 		</head>
 		<body>
-			<main class="container">
+			<a class="skip-link" href="#main">Skip to content</a>
+			<header class="site-header">
+				<a class="brand" href="/">
+					<img src="/assets/images/logo.svg" alt="Wild World, home" width="32" height="32"/>
+					<span>Wild World</span>
+				</a>
+				<nav class="site-nav" aria-label="Main">
+					<a href="/#globe">Globe</a>
+					<a href="/#places">Places</a>
+					<a href="/#sightings">Sightings</a>
+				</nav>
+			</header>
+			<main id="main">
 				{ children... }
 			</main>
-			<script src="/assets/js/app.js"></script>
+			<footer class="site-footer">
+				<p>Sightings from <a href="https://www.gbif.org" rel="noopener">GBIF</a>. Photos belong to their credited owners.</p>
+			</footer>
 		</body>
 	</html>
 }

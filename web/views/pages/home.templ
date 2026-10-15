@@ -1,27 +1,140 @@
 package pages
 
 import (
+	"strconv"
 	"workshop/internal/domain/sighting"
 	"workshop/web/views/components"
 	"workshop/web/views/layout"
 )
 
 templ Home(sightings []sighting.Sighting) {
+	{{ places := Places(sightings) }}
+	{{ stats := Stats(sightings, places) }}
 	@layout.Base(layout.BaseProps{
-		Title: "Sightings",
+		Title:       "Wild World · Sightings",
+		Description: "A globe of wildlife sightings from around the world.",
+		Three:       true,
 	}) {
-		<h1>Sightings</h1>
-		if len(sightings) == 0 {
-			<p>No sightings have been ingested yet.</p>
-		} else {
-			<p>Total: { len(sightings) }</p>
-			<ul class="sightings">
-				for _, s := range sightings {
-					<li>
-						@components.SightingCard(s)
-					</li>
-				}
-			</ul>
-		}
+		<section id="globe" class="stage" aria-labelledby="stage-title">
+			<div class="stage__panel">
+				<p class="stage__eyebrow">Field atlas</p>
+				<h1 id="stage-title" class="stage__title">Wild World</h1>
+				<p class="stage__hint">Drag the globe and pick a dot to see the animals seen there.</p>
+				<div class="stage__foot">
+					<span>Collections</span>
+					<span>{ strconv.Itoa(stats.Sightings) } sightings</span>
+				</div>
+			</div>
+			<div class="stage__scene">
+				<div class="globe" data-globe>
+					@components.ThreeScene(components.ThreeSceneProps{
+						Scene: "globe",
+						Label: "A globe with a dot for each country where animals were seen. The same places are listed below.",
+					})
+					<div class="globe__markers" data-markers></div>
+				</div>
+				<dl class="stats">
+					<div class="stat">
+						<dt>Sightings</dt>
+						<dd>{ strconv.Itoa(stats.Sightings) }</dd>
+					</div>
+					<div class="stat stat--boxed">
+						<dt>Countries</dt>
+						<dd>{ strconv.Itoa(stats.Countries) }</dd>
+					</div>
+					<div class="stat">
+						<dt>Species</dt>
+						<dd>{ strconv.Itoa(stats.Species) }</dd>
+					</div>
+				</dl>
+			</div>
+			@animalWheel()
+		</section>
+		<section id="places" class="section" aria-labelledby="places-title">
+			<div class="section__head">
+				<p class="section__index">01</p>
+				<h2 id="places-title">Places</h2>
+			</div>
+			if len(places) == 0 {
+				<p class="empty">No sightings have been ingested yet.</p>
+			} else {
+				<ul class="places">
+					for i, p := range places {
+						<li>
+							<button type="button" class="place" data-place={ strconv.Itoa(i) }>
+								<span class="place__name">{ p.Country }</span>
+								<span class="place__count">{ strconv.Itoa(p.Count) }</span>
+							</button>
+						</li>
+					}
+				</ul>
+			}
+		</section>
+		<section id="sightings" class="section" aria-labelledby="sightings-title">
+			<div class="section__head">
+				<p class="section__index">02</p>
+				<h2 id="sightings-title">Sightings</h2>
+			</div>
+			if len(sightings) == 0 {
+				<p class="empty">No sightings have been ingested yet.</p>
+			} else {
+				<ul class="sightings">
+					for _, s := range sightings {
+						<li>
+							@components.SightingCard(s)
+						</li>
+					}
+				</ul>
+			}
+		</section>
+		@templ.JSONScript("globe-data", places)
+		<script type="module" src="/assets/js/wheel.js"></script>
 	}
+}
+
+templ animalWheel() {
+	<div class="wheel" data-wheel role="dialog" aria-modal="true" aria-labelledby="wheel-country" hidden>
+		<div class="wheel__dial">
+			<svg class="wheel__ring" viewBox="-100 -100 200 200" aria-hidden="true" data-ring></svg>
+			<div class="wheel__items" data-items role="listbox" aria-labelledby="wheel-country"></div>
+			<div class="wheel__center" aria-live="polite">
+				<p id="wheel-country" class="wheel__country" data-country></p>
+				<p class="wheel__name" data-name></p>
+				<p class="wheel__count" data-count></p>
+			</div>
+		</div>
+		<button type="button" class="wheel__close" data-close>
+			<span aria-hidden="true">×</span>
+			<span class="visually-hidden">Close the wheel</span>
+		</button>
+		<p class="wheel__help">Move to choose, click to open. Arrow keys work too; Esc closes.</p>
+		@animalDetail()
+	</div>
+}
+
+templ animalDetail() {
+	<aside class="detail" data-detail aria-labelledby="detail-name" hidden>
+		<button type="button" class="detail__back" data-back>← Back to the wheel</button>
+		<figure class="detail__photo">
+			<img data-photo alt="" width="400" height="300"/>
+			<figcaption data-credit></figcaption>
+		</figure>
+		<p class="detail__status" data-status></p>
+		<h2 id="detail-name" class="detail__name" data-dname tabindex="-1"></h2>
+		<p class="detail__scientific" data-scientific></p>
+		<p class="detail__swahili" data-swahili></p>
+		<p class="detail__fact" data-fact></p>
+		<dl class="detail__facts">
+			<div><dt>Size</dt><dd data-size></dd></div>
+			<div><dt>Family</dt><dd data-family></dd></div>
+			<div><dt>Seen here</dt><dd data-seen></dd></div>
+			<div><dt>Animals counted</dt><dd data-individuals></dd></div>
+			<div><dt>Last seen</dt><dd data-last></dd></div>
+			<div><dt>First seen</dt><dd data-first></dd></div>
+		</dl>
+		<h3 class="detail__sub">Recorded by</h3>
+		<ul class="detail__observers" data-observers></ul>
+		<h3 class="detail__sub">Recent sightings</h3>
+		<ul class="detail__list" data-sightings></ul>
+	</aside>
 }
