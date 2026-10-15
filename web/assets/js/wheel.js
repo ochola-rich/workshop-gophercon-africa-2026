@@ -250,6 +250,7 @@ if (wheel) {
 		}
 
 		modelCanvas.hidden = !use3d;
+		$('[data-model-hint]').hidden = !use3d;
 		if (!use3d) {
 			modelStatus.hidden = true;
 			viewer?.stop();

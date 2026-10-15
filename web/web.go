@@ -23,10 +23,22 @@ var assets embed.FS
 func New(logger *slog.Logger, config config.Config, sightingsSvc *sighting.Service) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.Handle("GET /assets/", http.FileServerFS(assetsFs(config.IsProduction())))
+	files := http.FileServerFS(assetsFs(config.IsProduction()))
+	if !config.IsProduction() {
+		files = revalidate(files)
+	}
+	mux.Handle("GET /assets/", files)
 	mux.Handle("GET /", handlers.Home(logger, sightingsSvc))
 
 	return mux
+}
+
+// revalidate makes browsers check for a newer asset on every load, for development.
+func revalidate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func assetsFs(prod bool) fs.FS {

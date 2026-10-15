@@ -120,10 +120,11 @@ templ animalDetail() {
 				<canvas class="detail__model" data-model hidden></canvas>
 				<img data-photo alt="" width="400" height="300"/>
 				<p class="detail__loading" data-model-status hidden>Loading 3D model…</p>
-			</div>
-			<div class="detail__toggle" data-toggle role="group" aria-label="Show the animal as" hidden>
-				<button type="button" data-view="model" aria-pressed="true">3D model</button>
-				<button type="button" data-view="photo" aria-pressed="false">Photo</button>
+				<div class="detail__toggle" data-toggle role="group" aria-label="Show the animal as" hidden>
+					<button type="button" data-view="model" aria-pressed="true">3D model</button>
+					<button type="button" data-view="photo" aria-pressed="false">Photo</button>
+				</div>
+				<p class="detail__hint" data-model-hint hidden>Drag to turn</p>
 			</div>
 			<figcaption data-credit></figcaption>
 		</figure>
