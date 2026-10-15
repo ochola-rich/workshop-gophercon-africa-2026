@@ -47,6 +47,11 @@ Amber is never used as text on the light panel (too little contrast).
 - **Animal card**: light panel sliding in from the right with photo, IUCN status badge, name,
   scientific and Kiswahili names, a fact with an amber rule, size, family, counts, dates,
   observers and recent sightings linking to their card below.
+- **3D animal** (`assets/js/animal3d.js`, `assets/js/models.js`): in the animal card, an
+  animated glTF model on a soft grey stage with a ground shadow, drag to turn, slow
+  auto-rotate. A "3D model / Photo" toggle when both exist; wheel slices with a model get a
+  small amber "3D" tag. Zebras use the horse model with stripes painted in a shader.
+  Add a model: put a `.glb` in `assets/models/` and a line in `models.js`.
 - **Sighting cards**: dark tile, 4:3 photo at 70% greyscale, colour on hover; amber border on
   hover or when targeted from the animal card.
 

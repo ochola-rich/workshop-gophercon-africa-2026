@@ -115,8 +115,16 @@ templ animalWheel() {
 templ animalDetail() {
 	<aside class="detail" data-detail aria-labelledby="detail-name" hidden>
 		<button type="button" class="detail__back" data-back>← Back to the wheel</button>
-		<figure class="detail__photo">
-			<img data-photo alt="" width="400" height="300"/>
+		<figure class="detail__photo" data-figure>
+			<div class="detail__media">
+				<canvas class="detail__model" data-model hidden></canvas>
+				<img data-photo alt="" width="400" height="300"/>
+				<p class="detail__loading" data-model-status hidden>Loading 3D model…</p>
+			</div>
+			<div class="detail__toggle" data-toggle role="group" aria-label="Show the animal as" hidden>
+				<button type="button" data-view="model" aria-pressed="true">3D model</button>
+				<button type="button" data-view="photo" aria-pressed="false">Photo</button>
+			</div>
 			<figcaption data-credit></figcaption>
 		</figure>
 		<p class="detail__status" data-status></p>

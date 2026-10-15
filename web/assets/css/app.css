@@ -562,11 +562,70 @@ button {
 	margin: 0.5rem 0 1rem;
 }
 
-.detail__photo img {
-	width: 100%;
+.detail__media {
+	position: relative;
 	aspect-ratio: 4 / 3;
+	background: radial-gradient(circle at 50% 40%, #f2f2f0 0%, #cfcfcc 100%);
+}
+
+.detail__photo img,
+.detail__model {
+	display: block;
+	width: 100%;
+	height: 100%;
 	object-fit: cover;
-	background: #cfcfcc;
+}
+
+.detail__model {
+	cursor: grab;
+}
+
+.detail__model:active {
+	cursor: grabbing;
+}
+
+.detail__loading {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	margin: 0;
+	font-size: 0.85rem;
+	color: var(--ink-soft);
+}
+
+.detail__toggle {
+	display: inline-flex;
+	margin-top: 0.5rem;
+	border: 1px solid var(--ink);
+}
+
+.detail__toggle button {
+	min-height: 36px;
+	min-width: 44px;
+	padding: 0 0.9rem;
+	border: 0;
+	background: none;
+	font-size: 0.8rem;
+	font-weight: 600;
+}
+
+.detail__toggle button[aria-pressed="true"] {
+	background: var(--ink);
+	color: var(--bone);
+}
+
+.wheel__tag {
+	position: absolute;
+	left: 50%;
+	bottom: 8%;
+	transform: translateX(-50%);
+	padding: 0 0.3rem;
+	font-size: 0.6rem;
+	font-weight: 700;
+	line-height: 1.5;
+	background: var(--amber);
+	color: var(--ink);
 }
 
 .detail__photo figcaption {

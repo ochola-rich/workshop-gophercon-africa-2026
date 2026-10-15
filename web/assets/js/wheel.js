@@ -1,6 +1,7 @@
 // The animal wheel: pick a place, then swing round a ring of the animals seen
 // there, GTA weapon-wheel style, and open one for its facts and sightings.
 // Everything from GBIF goes in through textContent or checked URLs only.
+import { modelFor } from '/assets/js/models.js';
 
 const places = JSON.parse(document.getElementById('globe-data')?.textContent || '[]') || [];
 const wheel = document.querySelector('[data-wheel]');
@@ -28,6 +29,21 @@ if (wheel) {
 	let current = 0;
 	let opener = null;
 
+	// The 3D viewer loads the first time an animal with a model is opened.
+	const modelCanvas = $('[data-model]');
+	const modelStatus = $('[data-model-status]');
+	const toggle = $('[data-toggle]');
+	let viewer = null;
+	let view = 'model';
+	let shown = null;
+
+	toggle.addEventListener('click', (e) => {
+		const b = e.target.closest('[data-view]');
+		if (!b) return;
+		view = b.dataset.view;
+		if (shown) fillMedia(shown);
+	});
+
 	document.addEventListener('click', (e) => {
 		const b = e.target.closest('[data-place]');
 		if (!b) return;
@@ -45,6 +61,7 @@ if (wheel) {
 	});
 
 	dial.addEventListener('pointermove', (e) => {
+		if (!detail.hidden) return;
 		const i = indexAt(e);
 		if (i !== null && i !== current) select(i);
 	});
@@ -148,7 +165,15 @@ if (wheel) {
 			label.textContent = a.name + ', ' + plural(a.count, 'sighting');
 			b.append(label);
 			b.addEventListener('focus', () => select(i));
-			b.addEventListener('mouseenter', () => select(i));
+			b.addEventListener('mouseenter', () => detail.hidden && select(i));
+			if (modelFor(a.scientific)) {
+				const tag = document.createElement('span');
+				tag.className = 'wheel__tag';
+				tag.setAttribute('aria-hidden', 'true');
+				tag.textContent = '3D';
+				b.append(tag);
+				label.textContent += ', has a 3D model';
+			}
 			b.addEventListener('click', (e) => {
 				e.stopPropagation();
 				select(i);
@@ -169,7 +194,9 @@ if (wheel) {
 		});
 		$('[data-name]').textContent = a.name;
 		$('[data-count]').textContent =
-			plural(a.count, 'sighting') + (a.fact ? ' · ' + (STATUS[a.fact.status] || a.fact.status) : '');
+			plural(a.count, 'sighting') +
+			(a.fact ? ' · ' + (STATUS[a.fact.status] || a.fact.status) : '') +
+			(modelFor(a.scientific) ? ' · 3D' : '');
 		if (!detail.hidden) fillDetail(a);
 	}
 
@@ -187,6 +214,70 @@ if (wheel) {
 	function hideDetail() {
 		detail.hidden = true;
 		wheel.classList.remove('has-detail');
+		shown = null;
+		viewer?.stop();
+	}
+
+	// fillMedia shows the 3D model when there is one and it's chosen, else the photo.
+	function fillMedia(a) {
+		shown = a;
+		const entry = modelFor(a.scientific);
+		const photo = $('[data-photo]');
+		const hasPhoto = safeURL(a.photo);
+		const use3d = !!entry && (view === 'model' || !hasPhoto);
+
+		toggle.hidden = !(entry && hasPhoto);
+		toggle.querySelectorAll('[data-view]').forEach((b) => {
+			b.setAttribute('aria-pressed', String(b.dataset.view === (use3d ? 'model' : 'photo')));
+		});
+		$('[data-figure]').hidden = !entry && !hasPhoto;
+
+		const credits = [];
+		if (use3d) {
+			credits.push('3D model: ' + entry.credit);
+			if (entry.note) credits.push(entry.note);
+		} else if (a.credit) {
+			credits.push('Photo: ' + a.credit);
+		}
+		$('[data-credit]').textContent = credits.join(' · ');
+
+		photo.hidden = use3d || !hasPhoto;
+		if (hasPhoto) {
+			photo.src = a.photo;
+			photo.alt = 'A photo of a ' + a.name + ' seen in ' + place.country;
+		} else {
+			photo.removeAttribute('src');
+		}
+
+		modelCanvas.hidden = !use3d;
+		if (!use3d) {
+			modelStatus.hidden = true;
+			viewer?.stop();
+			return;
+		}
+		modelCanvas.setAttribute('role', 'img');
+		modelCanvas.setAttribute('aria-label', 'An animated 3D model of a ' + a.name + '. Drag to turn it.');
+		modelStatus.textContent = 'Loading 3D model…';
+		modelStatus.hidden = false;
+		loadViewer()
+			.then((v) => v.show(entry))
+			.then((ok) => {
+				if (ok !== false) modelStatus.hidden = true;
+			})
+			.catch((err) => {
+				console.warn('animal3d: not shown', err);
+				modelStatus.textContent = '3D model unavailable.';
+				modelCanvas.hidden = true;
+				if (hasPhoto) photo.hidden = false;
+			});
+	}
+
+	async function loadViewer() {
+		if (!viewer) {
+			const { createViewer } = await import('/assets/js/animal3d.js');
+			viewer = viewer || createViewer(modelCanvas);
+		}
+		return viewer;
 	}
 
 	function fillDetail(a) {
@@ -196,16 +287,7 @@ if (wheel) {
 			if (el.tagName === 'DD') el.parentElement.hidden = !text;
 			else el.hidden = !text;
 		};
-		const photo = $('[data-photo]');
-		if (safeURL(a.photo)) {
-			photo.src = a.photo;
-			photo.alt = 'A photo of a ' + a.name + ' seen in ' + place.country;
-			photo.parentElement.hidden = false;
-		} else {
-			photo.removeAttribute('src');
-			photo.parentElement.hidden = true;
-		}
-		set('[data-credit]', a.credit ? 'Photo: ' + a.credit : '');
+		if (shown !== a) fillMedia(a);
 
 		const status = a.fact?.status;
 		const badge = $('[data-status]');
