@@ -22,16 +22,20 @@ templ Home(sightings []sighting.Sighting) {
 				<p class="stage__hint">Drag the globe and pick a dot to see the animals seen there.</p>
 				<div class="stage__foot">
 					<span>Collections</span>
-					<span>{ strconv.Itoa(stats.Sightings) } sightings</span>
+					<span>{ strconv.Itoa(stats.Countries) } countries</span>
 				</div>
 			</div>
 			<div class="stage__scene">
 				<div class="globe" data-globe>
 					@components.ThreeScene(components.ThreeSceneProps{
 						Scene: "globe",
-						Label: "A globe with a dot for each country where animals were seen. The same places are listed below.",
+						Label: "A globe with a dot for each region where animals were seen. The same places are listed below.",
 					})
 					<div class="globe__markers" data-markers></div>
+					<div class="globe__zoom" role="group" aria-label="Zoom the globe">
+						<button type="button" data-zoom="in" aria-label="Zoom in">+</button>
+						<button type="button" data-zoom="out" aria-label="Zoom out">−</button>
+					</div>
 				</div>
 				<dl class="stats">
 					<div class="stat">
@@ -39,8 +43,8 @@ templ Home(sightings []sighting.Sighting) {
 						<dd>{ strconv.Itoa(stats.Sightings) }</dd>
 					</div>
 					<div class="stat stat--boxed">
-						<dt>Countries</dt>
-						<dd>{ strconv.Itoa(stats.Countries) }</dd>
+						<dt>Regions</dt>
+						<dd>{ strconv.Itoa(stats.Regions) }</dd>
 					</div>
 					<div class="stat">
 						<dt>Species</dt>
@@ -58,16 +62,32 @@ templ Home(sightings []sighting.Sighting) {
 			if len(places) == 0 {
 				<p class="empty">No sightings have been ingested yet.</p>
 			} else {
-				<ul class="places">
-					for i, p := range places {
-						<li>
-							<button type="button" class="place" data-place={ strconv.Itoa(i) }>
-								<span class="place__name">{ p.Country }</span>
-								<span class="place__count">{ strconv.Itoa(p.Count) }</span>
-							</button>
-						</li>
+				<div class="countries">
+					for _, g := range ByCountry(places) {
+						<section class="country" aria-label={ g.Country }>
+							<h3 class="country__name">
+								{ g.Country }
+								<span class="country__count">{ strconv.Itoa(g.Count) }</span>
+							</h3>
+							<ul class="places">
+								for _, p := range g.Places {
+									<li>
+										<button type="button" class="place" data-place={ strconv.Itoa(p.Index) }>
+											<span class="place__name">
+												if p.Region != "" {
+													{ p.Region }
+												} else {
+													All of { p.Country }
+												}
+											</span>
+											<span class="place__count">{ strconv.Itoa(p.Count) }</span>
+										</button>
+									</li>
+								}
+							</ul>
+						</section>
 					}
-				</ul>
+				</div>
 			}
 		</section>
 		<section id="sightings" class="section" aria-labelledby="sightings-title">

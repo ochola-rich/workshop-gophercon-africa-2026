@@ -10,13 +10,26 @@ import (
 )
 
 type (
-	// Place is one dot on the globe: every sighting in a country.
+	// Place is one dot on the globe: every sighting in a region of a country,
+	// or in the whole country when GBIF gave no region.
 	Place struct {
+		Region  string        `json:"region,omitzero"`
 		Country string        `json:"country"`
 		Lat     float64       `json:"lat"`
 		Lng     float64       `json:"lng"`
 		Count   int           `json:"count"`
 		Animals []PlaceAnimal `json:"animals"`
+	}
+	// CountryGroup lists a country's places for the Places section.
+	CountryGroup struct {
+		Country string
+		Count   int
+		Places  []IndexedPlace
+	}
+	// IndexedPlace is a place with its position in the globe's data.
+	IndexedPlace struct {
+		Index int
+		Place
 	}
 	// PlaceAnimal is one slice of a place's wheel.
 	PlaceAnimal struct {
@@ -44,12 +57,13 @@ type (
 	// GlobeStats are the headline numbers beside the globe.
 	GlobeStats struct {
 		Sightings int
+		Regions   int
 		Countries int
 		Species   int
 	}
 )
 
-// Places groups sightings by country, busiest first, with each country's animals.
+// Places groups sightings by region, busiest first, with each region's animals.
 func Places(sightings []sighting.Sighting) []Place {
 	type acc struct {
 		place          Place
@@ -57,7 +71,7 @@ func Places(sightings []sighting.Sighting) []Place {
 		points         int
 		animals        map[string]int
 	}
-	byCountry := map[string]*acc{}
+	byRegion := map[string]*acc{}
 	var order []string
 
 	for _, s := range sightings {
@@ -65,11 +79,13 @@ func Places(sightings []sighting.Sighting) []Place {
 		if country == "" {
 			continue
 		}
-		a, ok := byCountry[country]
+		region := strings.TrimSpace(s.Location.StateProvince)
+		key := regionKey(country, region)
+		a, ok := byRegion[key]
 		if !ok {
-			a = &acc{place: Place{Country: country}, animals: map[string]int{}}
-			byCountry[country] = a
-			order = append(order, country)
+			a = &acc{place: Place{Region: region, Country: country}, animals: map[string]int{}}
+			byRegion[key] = a
+			order = append(order, key)
 		}
 		a.place.Count++
 		if s.Location.Latitude != 0 || s.Location.Longitude != 0 {
@@ -78,19 +94,19 @@ func Places(sightings []sighting.Sighting) []Place {
 			a.points++
 		}
 
-		key := speciesKey(s.Species)
-		i, ok := a.animals[key]
+		kind := speciesKey(s.Species)
+		i, ok := a.animals[kind]
 		if !ok {
 			i = len(a.place.Animals)
-			a.animals[key] = i
+			a.animals[kind] = i
 			a.place.Animals = append(a.place.Animals, newPlaceAnimal(s.Species))
 		}
 		addSighting(&a.place.Animals[i], s)
 	}
 
 	places := make([]Place, 0, len(order))
-	for _, country := range order {
-		a := byCountry[country]
+	for _, key := range order {
+		a := byRegion[key]
 		if a.points == 0 {
 			continue
 		}
@@ -103,13 +119,50 @@ func Places(sightings []sighting.Sighting) []Place {
 	return places
 }
 
-// Stats counts the sightings, countries and species on the page.
+// Stats counts the sightings, regions, countries and species on the page.
 func Stats(sightings []sighting.Sighting, places []Place) GlobeStats {
 	kinds := map[string]bool{}
 	for _, s := range sightings {
 		kinds[speciesKey(s.Species)] = true
 	}
-	return GlobeStats{Sightings: len(sightings), Countries: len(places), Species: len(kinds)}
+	return GlobeStats{
+		Sightings: len(sightings),
+		Regions:   len(places),
+		Countries: len(ByCountry(places)),
+		Species:   len(kinds),
+	}
+}
+
+// ByCountry gathers places under their country, busiest country first.
+func ByCountry(places []Place) []CountryGroup {
+	var groups []CountryGroup
+	at := map[string]int{}
+	for i, p := range places {
+		g, ok := at[p.Country]
+		if !ok {
+			g = len(groups)
+			at[p.Country] = g
+			groups = append(groups, CountryGroup{Country: p.Country})
+		}
+		groups[g].Count += p.Count
+		groups[g].Places = append(groups[g].Places, IndexedPlace{Index: i, Place: p})
+	}
+	slices.SortStableFunc(groups, func(x, y CountryGroup) int { return y.Count - x.Count })
+	return groups
+}
+
+// Label names a place as "Region, Country", or just the country.
+func (p Place) Label() string {
+	if p.Region == "" {
+		return p.Country
+	}
+	return p.Region + ", " + p.Country
+}
+
+// regionKey matches a region however GBIF spelt it ("Taita-Taveta", "Taita Taveta").
+func regionKey(country, region string) string {
+	r := strings.NewReplacer("-", " ", "_", " ", ".", "").Replace(strings.ToLower(region))
+	return strings.ToLower(country) + "|" + strings.Join(strings.Fields(r), " ")
 }
 
 func newPlaceAnimal(sp species.Species) PlaceAnimal {

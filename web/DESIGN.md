@@ -39,11 +39,14 @@ Amber is never used as text on the light panel (too little contrast).
 
 - **Globe** (`assets/js/scenes/globe.js`): near-black sphere, fresnel glass rim and halo,
   dotted land and faint borders from world-atlas, 30° graticule. One amber dot and spike per
-  country; spike height grows with sightings. Dots are HTML buttons over the canvas.
-  Drag to turn, no scroll-zoom; auto-rotates until touched.
+  region; spike height grows with sightings. Dots are HTML buttons over the canvas.
+  Drag to turn; zoom with the square +/− buttons bottom-right (no scroll-zoom, so the page
+  still scrolls); auto-rotates until touched. Opening a region flies in close to it.
 - **Wheel** (`assets/js/wheel.js`): full-screen dim overlay, GTA-style ring of slices, one per
-  animal in that country. Pointer angle, hover or arrow keys select; selected slice fills
-  amber, its photo goes from greyscale to colour. Centre shows country, animal and count.
+  animal in that region. Pointer angle, hover or arrow keys select; selected slice fills
+  amber, its photo goes from greyscale to colour. Centre shows region, animal and count.
+- **Places list**: one block per country, its name over an amber rule with the total, and its
+  regions as chips beneath ("All of …" when GBIF gave no region).
 - **Animal card**: light panel sliding in from the right with photo, IUCN status badge, name,
   scientific and Kiswahili names, a fact with an amber rule, size, family, counts, dates,
   observers and recent sightings linking to their card below.
@@ -57,7 +60,9 @@ Amber is never used as text on the light panel (too little contrast).
 
 ## Data
 
-- Home shows every sighting (no filter). Places group by country (`pages/globe.go`).
+- Home shows every sighting (no filter). Places group by region, the GBIF state or
+  province within a country, spelling variants merged (`pages/globe.go`); no region means the
+  whole country.
 - Facts are hand-written per species in `pages/facts.go`, keyed by canonical name.
 
 ## Motion

@@ -66,12 +66,13 @@ mount('globe', function ({ THREE, scene, camera, renderer, canvas, colour, still
 		b.type = 'button';
 		b.className = 'marker';
 		b.dataset.place = String(i);
-		b.style.setProperty('--s', String(0.6 + 0.6 * Math.sqrt(p.count / max)));
+		b.style.setProperty('--s', String(0.5 + 0.7 * Math.sqrt(p.count / max)));
 		const kinds = p.animals.length;
-		b.setAttribute('aria-label', p.country + ': ' + p.count + ' sightings of ' + kinds + (kinds === 1 ? ' animal' : ' animals'));
+		const name = p.region ? p.region + ', ' + p.country : p.country;
+		b.setAttribute('aria-label', name + ': ' + p.count + ' sightings of ' + kinds + (kinds === 1 ? ' animal' : ' animals'));
 		const label = document.createElement('span');
 		label.className = 'marker__label';
-		label.textContent = p.country;
+		label.textContent = name;
 		b.append(label);
 		layer?.append(b);
 		return b;
@@ -119,17 +120,30 @@ mount('globe', function ({ THREE, scene, camera, renderer, canvas, colour, still
 		if (flight.t >= 1) flight = null;
 	}
 
+	// Zoom by buttons rather than the scroll wheel, so the page still scrolls.
+	const NEAR = 2.2;
+	const FAR = 6.5;
+	let rest = home;
+	document.querySelectorAll('[data-zoom]').forEach((b) => {
+		b.addEventListener('click', () => {
+			const d = camera.position.length() * (b.dataset.zoom === 'in' ? 0.72 : 1.38);
+			rest = Math.min(FAR, Math.max(NEAR, d));
+			controls.autoRotate = false;
+			flyTo(camera.position.clone().normalize(), rest, 0.35);
+		});
+	});
+
 	window.addEventListener('place:open', (e) => {
 		const p = places[e.detail.index];
 		if (!p) return;
 		controls.autoRotate = false;
+		rest = camera.position.length();
 		markers.forEach((m, i) => m.classList.toggle('is-active', i === e.detail.index));
-		flyTo(toVec(p.lat, p.lng, 1), 3.9, 1.1);
+		flyTo(toVec(p.lat, p.lng, 1), Math.min(rest, 2.9), 1.1);
 	});
 	window.addEventListener('place:close', () => {
 		markers.forEach((m) => m.classList.remove('is-active'));
-		flyTo(camera.position.clone().normalize(), home, 0.9);
-		controls.autoRotate = !still;
+		flyTo(camera.position.clone().normalize(), rest, 0.9);
 	});
 
 	// Keep each marker over its spike, hidden when it's round the back.

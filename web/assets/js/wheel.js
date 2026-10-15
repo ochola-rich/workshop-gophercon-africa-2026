@@ -123,7 +123,7 @@ if (wheel) {
 		ring.replaceChildren();
 		items.replaceChildren();
 		items.style.setProperty('--n', String(n));
-		$('[data-country]').textContent = place.country;
+		$('[data-country]').textContent = placeName(place);
 
 		const span = 360 / n;
 		const gap = n === 1 ? 0 : Math.min(2.4, span * 0.08);
@@ -244,7 +244,7 @@ if (wheel) {
 		photo.hidden = use3d || !hasPhoto;
 		if (hasPhoto) {
 			photo.src = a.photo;
-			photo.alt = 'A photo of a ' + a.name + ' seen in ' + place.country;
+			photo.alt = 'A photo of a ' + a.name + ' seen in ' + placeName(place);
 		} else {
 			photo.removeAttribute('src');
 		}
@@ -301,7 +301,7 @@ if (wheel) {
 		set('[data-fact]', a.fact?.fact || 'No field notes yet for this animal.');
 		set('[data-size]', a.fact?.size);
 		set('[data-family]', [a.family, a.order, a.class].filter(Boolean).join(' · '));
-		set('[data-seen]', plural(a.count, 'sighting') + ' in ' + place.country);
+		set('[data-seen]', plural(a.count, 'sighting') + ' in ' + (place.region || place.country));
 		set('[data-individuals]', String(a.individuals));
 		set('[data-last]', a.lastSeen);
 		set('[data-first]', a.count > 1 ? a.firstSeen : '');
@@ -381,6 +381,10 @@ function donut() {
 		'M ' + OUTER + ' 0 A ' + OUTER + ' ' + OUTER + ' 0 1 1 ' + -OUTER + ' 0 A ' + OUTER + ' ' + OUTER + ' 0 1 1 ' + OUTER + ' 0 Z ' +
 		'M ' + INNER + ' 0 A ' + INNER + ' ' + INNER + ' 0 1 0 ' + -INNER + ' 0 A ' + INNER + ' ' + INNER + ' 0 1 0 ' + INNER + ' 0 Z'
 	);
+}
+
+function placeName(p) {
+	return p.region ? p.region + ', ' + p.country : p.country;
 }
 
 function safeURL(u) {
